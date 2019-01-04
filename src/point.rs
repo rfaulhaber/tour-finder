@@ -39,7 +39,7 @@ impl PointSet {
 		let mut map: HashMap<String, Point> = HashMap::new();
 
 		for point in points.clone() {
-			map.insert(point.name.clone(), point);
+			map.insert(point.get_name(), point);
 		}
 
 		PointSet {
@@ -63,8 +63,17 @@ pub struct Route {
 }
 
 impl Route {
-	pub fn print(&self) -> String {
-		unimplemented!();
+	pub fn get_result_string(&self) -> String {
+		let mut result = String::new();
+
+		let distance_str = format!("distance: {}", self.distance);
+		let point_route = self.ordered_point_names.join(" -> ");
+
+		result.push_str(distance_str.as_str());
+		result.push_str("\n");
+		result.push_str(point_route.as_str());
+
+		return result;
 	}
 }
 
@@ -75,13 +84,13 @@ pub enum SolveMethod {
 
 pub fn solve(set: PointSet, method: SolveMethod) -> Route {
 	match method {
-		SimulatedAnnealing => simulated_annealing(set),
 		NearestNeighbor => nearest_neighbor(set),
+		SimulatedAnnealing => simulated_annealing(set),
 	}
 }
 
 fn simulated_annealing(set: PointSet) -> Route {
-	unimplemented!();
+	panic!("not implemented yet!");
 }
 
 fn nearest_neighbor(set: PointSet) -> Route {
@@ -91,7 +100,7 @@ fn nearest_neighbor(set: PointSet) -> Route {
 
 	let mut route_order: Vec<String> = Vec::new();
 
-	route_order.push(current.name.clone());
+	route_order.push(current.get_name());
 
 	while queue.len() > 0 {
 		let mut min_dist = std::f32::MAX;
@@ -201,5 +210,17 @@ mod tests {
 
 		assert_eq!(result.ordered_point_names, vec!("p1", "p2", "p3", "p1"));
 		assert_eq!(result.distance.floor(), 459.0); // we get the idea
+	}
+
+	#[test]
+	fn get_result_string_test() {
+		let test_result = Route {
+			distance: 30.0,
+			ordered_point_names: vec![String::from("p1"), String::from("p2"), String::from("p3")],
+		};
+
+		let result = test_result.get_result_string();
+
+		assert_eq!(result, "distance: 30\np1 -> p2 -> p3");
 	}
 }

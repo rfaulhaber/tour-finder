@@ -3,7 +3,7 @@ use std::env;
 use std::format;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader, Read};
-use std::time::{Duration, Instant, SystemTime};
+use std::time::Instant;
 
 fn main() {
     let args: Vec<String> = env::args().collect();

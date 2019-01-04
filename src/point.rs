@@ -1,3 +1,5 @@
+extern crate rand;
+use rand::Rng;
 use std::collections::HashMap;
 
 #[derive(Clone)]
@@ -91,6 +93,44 @@ pub fn solve(set: PointSet, method: SolveMethod) -> Route {
 
 fn simulated_annealing(set: PointSet) -> Route {
 	panic!("not implemented yet!");
+}
+
+// fn random_route(set: PointSet) -> Route {
+// 	let mut queue = set.points.clone();
+// 	let mut total_distance: f32 = 0.0;
+// 	let mut current = queue.remove(0);
+
+// 	let mut route_order: Vec<String> = Vec::new();
+// }
+
+struct Path {
+	points: Vec<Point>,
+}
+
+impl Path {
+	fn distance(&self) -> f32 {
+		let mut distance: f32 = 0.0;
+
+		for i in (0..self.points.len() - 2).step_by(2) {
+			let this = &self.points[i];
+			let next = &self.points[i + 2];
+
+			distance += this.dist(&next);
+		}
+
+		distance
+	}
+}
+
+fn random_subroute(points: Vec<Point>) -> Path {
+	let mut queue = points.clone();
+	let mut current = queue.remove(0);
+
+	let mut path: Vec<Point> = Vec::new();
+
+	path.push(current.clone());
+
+	while queue.len() > 0 {}
 }
 
 fn nearest_neighbor(set: PointSet) -> Route {

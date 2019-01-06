@@ -1,8 +1,9 @@
 extern crate rand;
 use rand::Rng;
 use std::collections::HashMap;
+use std::time::Instant;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Point {
 	name: String,
 	x: i32,
@@ -65,6 +66,19 @@ pub struct Route {
 }
 
 impl Route {
+	fn from_path(path: Path) -> Route {
+		let mut names: Vec<String> = Vec::new();
+
+		for point in &path.points {
+			names.push(point.get_name());
+		}
+
+		Route {
+			distance: path.distance(),
+			ordered_point_names: names,
+		}
+	}
+
 	pub fn get_result_string(&self) -> String {
 		let mut result = String::new();
 
@@ -86,28 +100,88 @@ pub enum SolveMethod {
 
 pub fn solve(set: PointSet, method: SolveMethod) -> Route {
 	match method {
-		NearestNeighbor => nearest_neighbor(set),
-		SimulatedAnnealing => simulated_annealing(set),
+		SolveMethod::NearestNeighbor => nearest_neighbor(set),
+		SolveMethod::SimulatedAnnealing => simulated_annealing(set),
 	}
 }
 
 fn simulated_annealing(set: PointSet) -> Route {
-	panic!("not implemented yet!");
+	println!("staring annealing");
+	let now = Instant::now();
+	let mut route = Path::new(random_route(set.points.clone()));
+
+	let mut current_dist = route.distance();
+
+	while now.elapsed().as_secs() < 1 {
+		// imposes this limit based on the problem criteria
+		let start = rand::thread_rng().gen_range(1, set.points.len());
+		let end = rand::thread_rng().gen_range(1, set.points.len());
+		route = Path::new(neighboring_tour(route.points.clone(), start, end));
+
+		let dist = route.distance();
+
+		if dist < current_dist {
+			current_dist = dist;
+			println!("lowering temp, current distance: {}", current_dist);
+		}
+	}
+
+	return Route::from_path(route);
 }
 
-// fn random_route(set: PointSet) -> Route {
-// 	let mut queue = set.points.clone();
-// 	let mut total_distance: f32 = 0.0;
-// 	let mut current = queue.remove(0);
+fn random_route(set: Vec<Point>) -> Vec<Point> {
+	let mut queue = set.clone();
+	let first = queue.remove(0);
+	let last = queue.remove(queue.len() - 1);
+	let mut current = queue.remove(rand::thread_rng().gen_range(0, queue.len()));
 
-// 	let mut route_order: Vec<String> = Vec::new();
-// }
+	let mut path: Vec<Point> = Vec::new();
+
+	path.push(current.clone());
+
+	while queue.len() > 0 {
+		let random_index = rand::thread_rng().gen_range(0, queue.len());
+		current = queue.remove(random_index);
+		path.push(current.clone());
+	}
+
+	let mut new_vec: Vec<Point> = Vec::new();
+
+	new_vec.push(first);
+	new_vec.append(&mut path);
+	new_vec.push(last);
+
+	return new_vec;
+}
+
+fn neighboring_tour(set: Vec<Point>, start: usize, end: usize) -> Vec<Point> {
+	let mut new_subroute: Vec<Point> = Vec::new();
+	let mut range_count = 0; // there's a better way to do this, right?
+
+	for index in 0..set.len() {
+		if index >= start && index <= end {
+			// math is hard, especially when you write code late at night
+			let item = set.get(end - range_count).unwrap().clone();
+			new_subroute.push(item);
+			range_count = range_count + 1;
+		} else {
+			let item = set.get(index).unwrap().clone();
+			new_subroute.push(item);
+		}
+	}
+
+	return new_subroute;
+}
 
 struct Path {
 	points: Vec<Point>,
 }
 
 impl Path {
+	fn new(points: Vec<Point>) -> Path {
+		Path { points }
+	}
+
 	fn distance(&self) -> f32 {
 		let mut distance: f32 = 0.0;
 
@@ -120,17 +194,6 @@ impl Path {
 
 		distance
 	}
-}
-
-fn random_subroute(points: Vec<Point>) -> Path {
-	let mut queue = points.clone();
-	let mut current = queue.remove(0);
-
-	let mut path: Vec<Point> = Vec::new();
-
-	path.push(current.clone());
-
-	while queue.len() > 0 {}
 }
 
 fn nearest_neighbor(set: PointSet) -> Route {
@@ -262,5 +325,51 @@ mod tests {
 		let result = test_result.get_result_string();
 
 		assert_eq!(result, "distance: 30\np1 -> p2 -> p3");
+	}
+
+	#[test]
+	fn random_route_creates_new_route() {
+		let points = vec![
+			Point::new("p1", 0, 0),
+			Point::new("p2", 100, 100),
+			Point::new("p3", 50, 200),
+			Point::new("p4", 60, 40),
+			Point::new("p5", 420, 69),
+			Point::new("p6", 1, 2),
+			Point::new("p7", 9, 80),
+			Point::new("p8", 6, 70),
+		];
+
+		let result = random_route(points);
+
+		assert_eq!(result.len(), 8);
+		assert_eq!(result.get(0).unwrap().get_name(), "p1");
+		assert_eq!(result.get(7).unwrap().get_name(), "p8");
+	}
+
+	#[test]
+	fn neighboring_route_creates_new_route() {
+		let points = vec![
+			Point::new("p1", 0, 0),
+			Point::new("p2", 100, 100),
+			Point::new("p3", 50, 200),
+			Point::new("p4", 60, 40),
+			Point::new("p5", 420, 69),
+			Point::new("p6", 1, 2),
+			Point::new("p7", 9, 80),
+			Point::new("p8", 6, 70),
+		];
+
+		let result = neighboring_tour(points, 1, 4);
+
+		assert_eq!(result.len(), 8);
+		assert_eq!(result.get(0).unwrap().get_name(), "p1");
+		assert_eq!(result.get(1).unwrap().get_name(), "p5");
+		assert_eq!(result.get(2).unwrap().get_name(), "p4");
+		assert_eq!(result.get(3).unwrap().get_name(), "p3");
+		assert_eq!(result.get(4).unwrap().get_name(), "p2");
+		assert_eq!(result.get(5).unwrap().get_name(), "p6");
+		assert_eq!(result.get(6).unwrap().get_name(), "p7");
+		assert_eq!(result.get(7).unwrap().get_name(), "p8");
 	}
 }

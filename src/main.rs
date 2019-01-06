@@ -8,6 +8,13 @@ use std::time::Instant;
 fn main() {
     let args: Vec<String> = env::args().collect();
 
+    let mut method = point::SolveMethod::NearestNeighbor;
+
+    if &args[2] == "-s" {
+        println!("using simulated annealing");
+        method = point::SolveMethod::SimulatedAnnealing;
+    }
+
     // TODO clean up
     if args.len() > 1 {
         let filename = &args[1];
@@ -23,7 +30,7 @@ fn main() {
         let set = point::PointSet::new(point_set);
 
         let start = Instant::now();
-        let result = point::solve(set, point::SolveMethod::NearestNeighbor);
+        let result = point::solve(set, method);
 
         println!("{}", result.get_result_string());
         println!("elapsted time: {:?}", start.elapsed());
@@ -45,7 +52,7 @@ fn main() {
         let set = point::PointSet::new(point_set);
 
         let start = Instant::now();
-        let result = point::solve(set, point::SolveMethod::NearestNeighbor);
+        let result = point::solve(set, method);
 
         println!("{}", result.get_result_string());
         println!("elapsted time: {:?}", start.elapsed());
